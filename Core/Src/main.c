@@ -20,11 +20,12 @@
 #include "main.h"
 #include "can.h"
 #include "tim.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "can_manager.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,23 +52,12 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-CAN_FilterTypeDef can_filter_config = {
-  .FilterBank             = 0,
-  .FilterMode             = CAN_FILTERMODE_IDMASK,
-  .FilterScale            = CAN_FILTERSCALE_32BIT,
-  .FilterIdHigh           = 0x0000,
-  .FilterIdLow            = 0x0000,
-  .FilterMaskIdHigh       = 0x0000,
-  .FilterMaskIdLow        = 0x0000,
-  .FilterFIFOAssignment   = CAN_RX_FIFO0,
-  .FilterActivation       = ENABLE,
-  .SlaveStartFilterBank   = 14,
-};
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+uint8_t init_msg[] = "CAN Init OK\n";
 /* USER CODE END 0 */
 
 /**
@@ -102,26 +92,29 @@ int main(void)
   MX_CAN1_Init();
   MX_TIM6_Init();
   MX_TIM1_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_GPIO_TogglePin(LED_B_GPIO_Port, LED_B_Pin);
-  HAL_TIM_Base_Start_IT(&htim1);
+    HAL_GPIO_TogglePin(LED_B_GPIO_Port, LED_B_Pin);
+    HAL_TIM_Base_Start_IT(&htim1);
+    
 
-  if (HAL_CAN_ConfigFilter(&hcan1, &can_filter_config) != HAL_OK
-    || HAL_CAN_Start(&hcan1) != HAL_OK
-    || HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK
-    || HAL_TIM_Base_Start_IT(&htim6) != HAL_OK) {
-    Error_Handler();
-    }
+    if (HAL_CAN_ConfigFilter(&hcan1, &can_filter_config) != HAL_OK
+        || HAL_CAN_Start(&hcan1) != HAL_OK
+        || HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK
+        || HAL_TIM_Base_Start_IT(&htim6) != HAL_OK)
+    {
+        Error_Handler();
+    }else{HAL_UART_Transmit(&huart1,init_msg,sizeof(init_msg)-1,1000);}
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+    while (1)
+    {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+    }
   /* USER CODE END 3 */
 }
 
@@ -182,11 +175,11 @@ void SystemClock_Config(void)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+    /* User can add his own implementation to report the HAL error return state */
+    __disable_irq();
+    while (1)
+    {
+    }
   /* USER CODE END Error_Handler_Debug */
 }
 #ifdef USE_FULL_ASSERT
@@ -200,8 +193,8 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+    /* User can add his own implementation to report the file name and line number,
+       ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

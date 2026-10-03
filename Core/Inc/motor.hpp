@@ -11,8 +11,8 @@ public:
         char callback_msg[64];
 
         int len = snprintf(callback_msg, sizeof(callback_msg),
-                           "[ang:%i spd:%.0f amp:%.0f tmp:%.0f]\r\n",
-                           uint8_t(ecd_angle_*360/8192),speedRpm_,currentA_,tempC_);
+                           "[a:%i,ta:%.0f; spd:%.0f amp:%.0f tmp:%.0f]\r\n",
+                           uint8_t(ecd_angle_*360/8192),angle_,speedRpm_,currentA_,tempC_);
 
         // 发送数据到 USART1
         if (len > 0 && len < sizeof(callback_msg)) {
@@ -27,6 +27,17 @@ public:
         speedRpm_ = static_cast<int16_t>(rx_data[3] | rx_data[2]<<8);
         currentA_ = static_cast<int16_t>(rx_data[5] | rx_data[4]<<8);
         tempC_ = static_cast<uint8_t>(rx_data[6]);
+        errorCode = static_cast<uint8_t>(rx_data[7]);
+        // 2. 角度换算 ×360/8192
+        // 3. 增量累加 + 过零点环绕修正
+        // 4. 折到输出轴 (÷ 减速比)
+        //rpm=10k时，理论一帧转0.16圈，所以不会出现一帧转超过8192个编码的情况
+        float nowang=ecd_angle_*360/8192,lastang=last_ecd_*360/8192;
+        //目前电流输入都是正的，所以这么写（
+        if (lastang > nowang)lastang-=360;
+        angle_ += (nowang-lastang)/ratio_;
+
+        last_ecd_ = ecd_angle_;
 
     }
 
@@ -50,6 +61,7 @@ public:
         tx_data_[1]=(amp)&0xFF;;
         return tx_data_;
     };
+    float defaultWorkAmp=0.6f;
 
 private:
     // ---- 配置 ----
@@ -60,7 +72,6 @@ private:
     float speedRpm_ = 0;       // 转速 (RPM)
     float currentA_ = 0;       // 转矩电流 (A)
     float tempC_ = 0;          // 温度 (℃)
-    float currentSet = 0;
 
     // ---- 连续角度 ----
     float angle_ = 0;          // 输出轴累计角度
@@ -70,10 +81,11 @@ private:
     // ---- 待发送 ----
     uint8_t tx_data_[8] = {};
 
-    // ---- TODO: 你来实现 ----
-    // 1. 拆 8 字节为字段 (字节序 + 符号)
-    // 2. 角度换算 ×360/8192
-    // 3. 增量累加 + 过零点环绕修正
-    // 4. 折到输出轴 (÷ 减速比)
+    //other
+    float currentSet = 0;
+    float errorCode = 0;
+
+
+
     static constexpr uint16_t kEncoderRange = 8192;
 };

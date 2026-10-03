@@ -17,16 +17,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
     {
         HAL_GPIO_TogglePin(LED_B_GPIO_Port, LED_B_Pin);
         motor.feedbackUART();
-        motorOn?motor.setTxCurrent(0.0f):motor.setTxCurrent(0.0f);
-        motorOn=!motorOn;
+    }else if (htim==&htim6)
+    {
+        motorOn?motor.setTxCurrent(motor.defaultWorkAmp):motor.setTxCurrent(0.0f);
         if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) > 0) {
             HAL_CAN_AddTxMessage(&hcan1, &tx_header,
             motor.getTxData(),
             &can_tx_mailbox);
         }
-    }else if (htim==&htim6)
-    {
-
     }
 }
 
@@ -34,6 +32,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     if (GPIO_Pin == KEY_Pin)
     {
+        motorOn=!motorOn;
 
     }
 }

@@ -25,7 +25,7 @@ public:
     {
         ecd_angle_ = static_cast<int16_t>(rx_data[1] | rx_data[0]<<8);
         speedRpm_ = static_cast<int16_t>(rx_data[3] | rx_data[2]<<8);
-        currentA_ = static_cast<int16_t>(rx_data[5] | rx_data[4]<<8);
+        currentA_ = static_cast<int16_t>(rx_data[5] | rx_data[4]<<8)*20/16384.0f;
         tempC_ = static_cast<uint8_t>(rx_data[6]);
         errorCode = static_cast<uint8_t>(rx_data[7]);
         // 2. 角度换算 ×360/8192
@@ -51,12 +51,12 @@ public:
     // 命令：控制逻辑调用，内部限幅
     void setTxCurrent(float amperes)
     {
-        currentSet = amperes*1000;
+        currentSet = amperes;
     };
     // 命令出口：TIM6 中断取用（HAL 形参非 const）
     uint8_t* getTxData()
     {
-        auto amp=static_cast<uint16_t>(currentSet);
+        auto amp=static_cast<int16_t>((currentSet)*16384.0f/20);
         tx_data_[0]=(amp>>8) & 0xFF;
         tx_data_[1]=(amp)&0xFF;;
         return tx_data_;

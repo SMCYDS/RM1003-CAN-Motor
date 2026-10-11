@@ -33,7 +33,7 @@ public:
     float defaultWorkAmp=0.6f;
 
     // ---- PID ----
-    PID ppid_{15.0f, 0.0f, 0.0f,1000,450};
+    PID ppid_{16.0f, 0.0f, 0.0f,1000,450};
     PID spid_{0.1f,0.03f,0.1f,30,3};
 
 private:

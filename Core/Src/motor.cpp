@@ -7,6 +7,7 @@
 #include "can_manager.h"
 #include "callback.h"
 #include "can.h"
+#include <cmath>
 
 void Motor::canTransmit()
 {
@@ -63,7 +64,7 @@ void Motor::canRxMsgCallback(const uint8_t rx_data[8])
 
     if (enablePID_)//PID控制模式
     {
-        const int ffw_speed_=0,ffw_intensity_=0;//todo
+        const float ffw_speed_=0,ffw_intensity_=Kg_ * std::sin(angle_ * 3.1415926/180);//todo
         if (motorOn)
         {
             PIDTargetSpeed_ = ppid_.calc(targetAngle_,angle_)

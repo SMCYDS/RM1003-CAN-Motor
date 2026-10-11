@@ -33,8 +33,8 @@ public:
     float defaultWorkAmp=0.6f;
 
     // ---- PID ----
-    PID ppid_{16.0f, 0.0f, 0.0f,1000,450};
-    PID spid_{0.1f,0.03f,0.1f,30,3};
+    PID ppid_{20.0f, 0.0f, 200.0f,1000,1000};
+    PID spid_{0.12f,0.05f,0.2f,35,5};
 
 private:
     // ---- 配置 ----
@@ -61,6 +61,7 @@ private:
     float targetAngle_ = 0;
     float PIDAmpress_ = 0;
     float PIDTargetSpeed_ = 0;
+    float Kg_ = 2;
     // ---- 其他 ----
     float currentSet = 0;
     float errorCode = 0;

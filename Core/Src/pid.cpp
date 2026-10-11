@@ -12,7 +12,7 @@ void PID::reset()
     err_sum_ = 0.0f, running_ = false, last_d_ = 0.0f, last_err_ = 0.0f;
 }; //清理历史状态，电机重连reset
 
-float PID::calc(float ref, float fdb) //ref 目标值 fdb 实际值
+float PID::calc(float ref,float fdb) //ref 目标值 fdb 实际值
 {
     //定义基础变量
     float err = ref - fdb, output = 0;
@@ -40,3 +40,4 @@ float PID::calc(float ref, float fdb) //ref 目标值 fdb 实际值
     output = std::clamp(output, -out_max_, out_max_);
     return output;
 };
+

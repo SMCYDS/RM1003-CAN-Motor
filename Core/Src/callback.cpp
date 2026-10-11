@@ -9,7 +9,7 @@
 #include "can_manager.h"
 #include "motor.hpp"
 
-Motor motor(19.2f,ESC::C610,1);
+Motor motor(36.0f,ESC::C610,1,true);
 bool motorOn=false;
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 {
@@ -19,12 +19,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
         motor.feedbackUART();
     }else if (htim==&htim6)
     {
-        motorOn?motor.setTxCurrent(motor.defaultWorkAmp):motor.setTxCurrent(0.0f);
-        if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) > 0) {
-            HAL_CAN_AddTxMessage(&hcan1, &tx_header,
-            motor.getTxData(),
-            &can_tx_mailbox);
-        }
+
     }
 }
 
@@ -33,6 +28,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     if (GPIO_Pin == KEY_Pin)
     {
         motorOn=!motorOn;
+        motor.setTargetAngle(60.0f);
 
     }
 }

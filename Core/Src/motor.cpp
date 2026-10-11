@@ -3,6 +3,19 @@
 //
 
 #include "motor.hpp"
+#include "pid.hpp"
+#include "can_manager.h"
+#include "callback.h"
+#include "can.h"
+
+void Motor::canTransmit()
+{
+    if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) > 0) {
+        HAL_CAN_AddTxMessage(&hcan1, &tx_header,
+        getTxData(),
+        &can_tx_mailbox);
+    }
+}
 
 void Motor::feedbackUART()
 {
@@ -20,6 +33,7 @@ void Motor::feedbackUART()
 
 void Motor::canRxMsgCallback(const uint8_t rx_data[8])
 {
+    //解码参数
     if (esc_ == ESC::C620)
     {
         ecdAngle_ = static_cast<int16_t>(rx_data[1] | rx_data[0]<<8);
@@ -40,10 +54,33 @@ void Motor::canRxMsgCallback(const uint8_t rx_data[8])
     }
 
     //角度编码
-    // int diff = ecdAngle_ - lastEcd_;
-    // if (diff > 4096)       diff -= 8192;
-    // else if (diff < -4096) diff += 8192;
-    // angle_ += static_cast<float>(diff) * 360.0f / 8192.0f / ratio_;
+    int diff = ecdAngle_ - lastEcd_;
+    if (diff > 4096)       diff -= 8192;
+    else if (diff < -4096) diff += 8192;
+    angle_ += static_cast<float>(diff) * 360.0f / 8192.0f / ratio_;
+
+    lastEcd_ = ecdAngle_;
+
+    if (enablePID_)//PID控制模式
+    {
+        const int ffw_speed_=0,ffw_intensity_=0;//todo
+        if (motorOn)
+        {
+            PIDTargetSpeed_ = ppid_.calc(targetAngle_,angle_)
+            + ffw_speed_;
+            PIDAmpress_ = spid_.calc(PIDTargetSpeed_, speedRpm_ * (2.0f * 3.1415926f / 60.0f))
+            + ffw_intensity_;
+            setTxCurrent(PIDAmpress_);
+            canTransmit();
+        }else
+        {
+            setTxCurrent(0.0f);
+            canTransmit();
+        }
+    }else{//非PID控制模式
+        motorOn?setTxCurrent(motor.defaultWorkAmp):setTxCurrent(0.0f);
+        canTransmit();
+    }
 
 }
 

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "usart.h"
+#include "pid.hpp"
 
 enum class ESC : uint8_t {
     C620,
@@ -12,10 +13,11 @@ enum class ESC : uint8_t {
 
 class Motor {
 public:
-    explicit Motor(float ratio,ESC esc,int id): ratio_(ratio),esc_(esc),id_(id) {}// ratio = 减速比
+    explicit Motor(float ratio,ESC esc,int id=1,bool enablePID=false): ratio_(ratio),esc_(esc),id_(id),enablePID_(enablePID) {}// ratio = 减速比
     //通信
     void feedbackUART();
     void canRxMsgCallback(const uint8_t rx_data[8]);
+    void canTransmit();
 
     // 出口：控制逻辑读取
     float angle() const;           // 输出轴角度 (度)
@@ -24,21 +26,23 @@ public:
     float temperatureC() const;    // 温度 (℃)
     bool  hasFeedback() const;     // 收到过帧？
 
-    // 命令：控制逻辑调用，内部限幅
-    void setTxCurrent(float amperes)
-    {
-        currentSet = amperes;
-    };
+    void setTxCurrent(float amperes){currentSet = amperes;};
+    void setTargetAngle(float angle){targetAngle_ = angle;};
     // 命令出口：TIM6 中断取用（HAL 形参非 const）
     uint8_t* getTxData();
     float defaultWorkAmp=0.6f;
+
+    // ---- PID ----
+    PID ppid_{15.0f, 0.0f, 0.0f,1000,450};
+    PID spid_{0.1f,0.03f,0.1f,30,3};
 
 private:
     // ---- 配置 ----
     const float ratio_;        // 减速比
     ESC esc_;
     int id_;
-    // ---- 这一帧解出来的 ----
+    bool enablePID_;
+    // ---- 基本参数 ----
     float ecdAngle_ = 0;      // 机械角度 (0~8191)
     float speedRpm_ = 0;       // 转速 (RPM)
     float actualTorque_ = 0;
@@ -50,10 +54,14 @@ private:
     float lastEcd_ = 0;       // 上一帧角度，用来求差
     bool  received_ = false;   // 第一帧特殊处理
 
-    // ---- 待发送 ----
+    // ---- 通信 ----
     uint8_t txData_[8] = {};
 
-    //other
+    // ---- PID ----
+    float targetAngle_ = 0;
+    float PIDAmpress_ = 0;
+    float PIDTargetSpeed_ = 0;
+    // ---- 其他 ----
     float currentSet = 0;
     float errorCode = 0;
 

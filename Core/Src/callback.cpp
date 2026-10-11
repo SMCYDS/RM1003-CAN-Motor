@@ -22,7 +22,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
         motorOn?motor.setTxCurrent(motor.defaultWorkAmp):motor.setTxCurrent(0.0f);
         if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) > 0) {
             HAL_CAN_AddTxMessage(&hcan1, &tx_header,
-            motor.getTxData(),
+            motor.getTxData(3),
             &can_tx_mailbox);
         }
     }

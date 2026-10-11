@@ -37,7 +37,10 @@ add_executable(${CMAKE_PROJECT_NAME}
         Core/Inc/callback.h
         Core/Src/can_manager.cpp
         Core/Inc/can_manager.h
-        Core/Inc/motor.hpp)
+        Core/Inc/motor.hpp
+        Core/Src/pid.cpp
+        Core/Inc/pid.hpp
+        Core/Src/motor.cpp)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)

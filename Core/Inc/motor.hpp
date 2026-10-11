@@ -1,14 +1,20 @@
+#pragma once
+
 #include <string.h>
 #include <stdio.h>
 #include "usart.h"
 
+enum class ESC : uint8_t {
+    C620,
+    C610
+};
+
+
 class Motor {
 public:
-    explicit Motor(float ratio): ratio_(ratio) {}// ratio = 减速比
-
+    explicit Motor(float ratio,ESC esc,int id): ratio_(ratio),esc_(esc),id_(id) {}// ratio = 减速比
+    //通信
     void feedbackUART();
-
-    // 入口：CAN 接收中断调用
     void canRxMsgCallback(const uint8_t rx_data[8]);
 
     // 出口：控制逻辑读取
@@ -24,26 +30,28 @@ public:
         currentSet = amperes;
     };
     // 命令出口：TIM6 中断取用（HAL 形参非 const）
-    uint8_t* getTxData(int id);
+    uint8_t* getTxData();
     float defaultWorkAmp=0.6f;
 
 private:
     // ---- 配置 ----
     const float ratio_;        // 减速比
-
+    ESC esc_;
+    int id_;
     // ---- 这一帧解出来的 ----
-    float ecd_angle_ = 0;      // 机械角度 (0~8191)
+    float ecdAngle_ = 0;      // 机械角度 (0~8191)
     float speedRpm_ = 0;       // 转速 (RPM)
+    float actualTorque_ = 0;
     float currentA_ = 0;       // 转矩电流 (A)
     float tempC_ = 0;          // 温度 (℃)
 
     // ---- 连续角度 ----
     float angle_ = 0;          // 输出轴累计角度
-    float last_ecd_ = 0;       // 上一帧角度，用来求差
+    float lastEcd_ = 0;       // 上一帧角度，用来求差
     bool  received_ = false;   // 第一帧特殊处理
 
     // ---- 待发送 ----
-    uint8_t tx_data_[8] = {};
+    uint8_t txData_[8] = {};
 
     //other
     float currentSet = 0;

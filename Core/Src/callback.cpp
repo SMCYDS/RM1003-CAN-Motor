@@ -9,7 +9,7 @@
 #include "can_manager.h"
 #include "motor.hpp"
 
-Motor motor(19.2f);
+Motor motor(19.2f,ESC::C610,1);
 bool motorOn=false;
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 {
@@ -22,7 +22,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
         motorOn?motor.setTxCurrent(motor.defaultWorkAmp):motor.setTxCurrent(0.0f);
         if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) > 0) {
             HAL_CAN_AddTxMessage(&hcan1, &tx_header,
-            motor.getTxData(3),
+            motor.getTxData(),
             &can_tx_mailbox);
         }
     }

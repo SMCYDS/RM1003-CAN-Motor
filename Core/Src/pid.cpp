@@ -20,21 +20,21 @@ float PID::calc(float ref,float fdb) //ref 目标值 fdb 实际值
     err_sum_ += err;
     err_sum_ = std::clamp(err_sum_, -i_max_, i_max_);
     //运算d值
-    float this_d;
     if (running_)
     {
-        this_d = kd_ * (err - last_err_); //计算差值
-        this_d = d_filter_k_ * this_d + (1 - d_filter_k_) * last_d_; //一阶低通
+        dn_ = kd_ * (err - last_err_); //计算差值
+        dn_ = d_filter_k_ * dn_ + (1 - d_filter_k_) * last_d_; //一阶低通
     }
     else
     {
-        this_d = 0.0f;
+        dn_ = 0.0f;
         running_ = true;
     }
     //合成输出
-    output = kp_ * err + (err_sum_ * ki_) + this_d;
+    pn_ = kp_*err;in_ = err_sum_ * ki_;
+    output = pn_ + in_ + dn_;
     //记录历史数据
-    last_d_ = this_d;
+    last_d_ = dn_;
     last_err_ = err;
     //进行clamp
     output = std::clamp(output, -out_max_, out_max_);

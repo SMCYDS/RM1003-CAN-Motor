@@ -9,8 +9,8 @@
 #include "can_manager.h"
 #include "motor.hpp"
 
-Motor motor(36.0f,ESC::C610,1,true);
-bool motorOn=false;
+Motor motor(36.0f,MotorMode::C610,1,true);
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 {
     if (htim == &htim1)
@@ -19,16 +19,39 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
         motor.feedbackUART();
     }else if (htim==&htim6)
     {
-
+        // if (motorOn)
+        // {
+        //     if (motor.getTargetAngle()==60.0f)
+        //     {
+        //         motor.setTargetAngle(50.0f);
+        //     }else if (motor.getTargetAngle()==50.0f)
+        //     {
+        //         motor.setTargetAngle(60.0f);
+        //     }
+        // }
     }
 }
 
+uint32_t lastTick=0;
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     if (GPIO_Pin == KEY_Pin)
     {
-        motorOn=!motorOn;
-        motor.setTargetAngle(60.0f);
+        uint32_t t=HAL_GetTick();
+        if (t-lastTick<500)return;
+        lastTick=t;
+        if (motor.getMode()==MMode::OFF)
+        {
+            motor.setMode(MMode::PID);
+            motor.setTargetAngle(60.0f);
+        }else if (motor.getMode()==MMode::PID)
+        {
+            motor.setMode(MMode::STABLE);
+        }else
+        {
+            motor.setMode(MMode::OFF);
+        }
+
 
     }
 }

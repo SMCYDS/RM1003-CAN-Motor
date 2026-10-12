@@ -5,15 +5,22 @@
 #include "usart.h"
 #include "pid.hpp"
 
-enum class ESC : uint8_t {
+enum class MotorMode : uint8_t {
     C620,
     C610
 };
 
+enum class MMode : uint8_t {
+    OFF,
+    PID,
+    STABLE
+};
+
+
 
 class Motor {
 public:
-    explicit Motor(float ratio,ESC esc,int id=1,bool enablePID=false): ratio_(ratio),esc_(esc),id_(id),enablePID_(enablePID) {}// ratio = 减速比
+    explicit Motor(float ratio,MotorMode esc,int id=1,bool enablePID=false): ratio_(ratio),esc_(esc),id_(id),enablePID_(enablePID) {}// ratio = 减速比
     //通信
     void feedbackUART();
     void canRxMsgCallback(const uint8_t rx_data[8]);
@@ -28,18 +35,22 @@ public:
 
     void setTxCurrent(float amperes){currentSet = amperes;};
     void setTargetAngle(float angle){targetAngle_ = angle;};
+    float getTargetAngle(){return targetAngle_;};
+    void setMode(MMode mode){mode_ = mode;};
+    MMode getMode(){return mode_;}
     // 命令出口：TIM6 中断取用（HAL 形参非 const）
     uint8_t* getTxData();
     float defaultWorkAmp=0.6f;
 
     // ---- PID ----
-    PID ppid_{20.0f, 0.0f, 200.0f,1000,1000};
-    PID spid_{0.14f,0.02f,0.5f,35,6};
+    PID ppid_{24.0f, 0.0f, 100.0f,200,700};
+    PID spid_{0.12f,0.005f,0.32f,1,9};
 
 private:
     // ---- 配置 ----
     const float ratio_;        // 减速比
-    ESC esc_;
+    MotorMode esc_;
+    MMode mode_;
     int id_;
     bool enablePID_;
     // ---- 基本参数 ----
@@ -61,7 +72,8 @@ private:
     float targetAngle_ = 0;
     float PIDAmpress_ = 0;
     float PIDTargetSpeed_ = 0;
-    float Kg_ = 2;
+    float Kgp_ = 0.7;
+    float Kgs_ = 0.6;
     // ---- 其他 ----
     float currentSet = 0;
     float errorCode = 0;

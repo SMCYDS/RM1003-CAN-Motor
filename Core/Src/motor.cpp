@@ -35,7 +35,7 @@ void Motor::feedbackUART()
 void Motor::canRxMsgCallback(const uint8_t rx_data[8])
 {
     //解码参数
-    if (esc_ == ESC::C620)
+    if (esc_ == MotorMode::C620)
     {
         ecdAngle_ = static_cast<int16_t>(rx_data[1] | rx_data[0]<<8);
         speedRpm_ = static_cast<int16_t>(rx_data[3] | rx_data[2]<<8);
@@ -48,7 +48,7 @@ void Motor::canRxMsgCallback(const uint8_t rx_data[8])
         //rpm=10k时，理论一帧转0.16圈，所以不会出现一帧转超过8192个编码的情
 
         lastEcd_ = ecdAngle_;
-    }else if (esc_ == ESC::C610){
+    }else if (esc_ == MotorMode::C610){
         ecdAngle_ = static_cast<int16_t>(rx_data[1] | rx_data[0]<<8);
         speedRpm_ = static_cast<int16_t>(rx_data[3] | rx_data[2]<<8);
         actualTorque_ = static_cast<int16_t>(rx_data[5] | rx_data[4]<<8);
@@ -64,13 +64,12 @@ void Motor::canRxMsgCallback(const uint8_t rx_data[8])
 
     if (enablePID_)//PID控制模式
     {
-        const float ffw_speed_=0,ffw_intensity_=Kg_ * std::sin(angle_ * 3.1415926/180);//todo
-        if (motorOn)
+        if (motor.getMode()!=MMode::OFF)
         {
-            PIDTargetSpeed_ = ppid_.calc(targetAngle_,angle_)
-            + ffw_speed_;
-            PIDAmpress_ = spid_.calc(PIDTargetSpeed_, speedRpm_ * (2.0f * 3.1415926f / 60.0f))
-            + ffw_intensity_;
+            const float ffw_speed_=Kgp_ * std::sin(angle_ * 3.1415926/180),ffw_intensity_=Kgs_ * std::sin(angle_ * 3.1415926/180);//todo
+
+            PIDTargetSpeed_ = (motor.getMode()==MMode::PID?ppid_.calc(targetAngle_,angle_):0)+ ffw_speed_;
+            PIDAmpress_ = (motor.getMode()==MMode::PID?spid_.calc(PIDTargetSpeed_, speedRpm_ * (2.0f * 3.1415926f / 60.0f)):0)+ ffw_intensity_;
             setTxCurrent(PIDAmpress_);
             canTransmit();
         }else
@@ -78,8 +77,8 @@ void Motor::canRxMsgCallback(const uint8_t rx_data[8])
             setTxCurrent(0.0f);
             canTransmit();
         }
-    }else{//非PID控制模式
-        motorOn?setTxCurrent(motor.defaultWorkAmp):setTxCurrent(0.0f);
+    }else{//非PID控制模式，遗留代码
+        motor.getMode()!=MMode::OFF?setTxCurrent(motor.defaultWorkAmp):setTxCurrent(0.0f);
         canTransmit();
     }
 

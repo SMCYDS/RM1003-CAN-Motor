@@ -19,8 +19,9 @@ private:
     //基本量
     bool running_=false;
     float last_d_,last_err_;
-    float err_sum_;
+    float err_sum_=0;
     float kp_,ki_,kd_,i_max_,out_max_,d_filter_k_;
+    float pn_=0,in_=0,dn_=0;
 
 };
 
